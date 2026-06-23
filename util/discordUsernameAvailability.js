@@ -41,6 +41,11 @@ async function fetchWithTimeout(url, timeoutMs) {
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await fetch(url, { signal: controller.signal });
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error(`Request timed out after ${timeoutMs}ms`);
+    }
+    throw error;
   } finally {
     clearTimeout(timer);
   }
@@ -54,6 +59,14 @@ function normalizeAvailability(payload) {
     return payload.availability;
   }
   return null;
+}
+
+function previewPayload(payload) {
+  try {
+    return JSON.stringify(payload).slice(0, 300);
+  } catch (error) {
+    return '[unserializable payload]';
+  }
 }
 
 function* generateUsernames() {
@@ -77,8 +90,8 @@ async function main() {
   const requestedLimit = parsePositiveInt('--limit');
 
   const useSimulation = forceSimulate !== null ? forceSimulate : endpoint.length === 0;
-  const maxByDefaultForRealtime = 1000;
-  const effectiveLimit = requestedLimit || (useSimulation ? TOTAL_COMBINATIONS : maxByDefaultForRealtime);
+  const defaultRealtimeLimit = 1000;
+  const effectiveLimit = requestedLimit || (useSimulation ? TOTAL_COMBINATIONS : defaultRealtimeLimit);
   const delayMs = delayMsArg ?? (useSimulation ? 0 : 50);
   const limit = Math.min(effectiveLimit, TOTAL_COMBINATIONS);
   const cache = new Map();
@@ -107,8 +120,15 @@ async function main() {
             throw new Error(`HTTP ${response.status}`);
           }
           const payload = await response.json();
-          availability = normalizeAvailability(payload) || 'unavailable';
+          const normalized = normalizeAvailability(payload);
+          if (!normalized) {
+            console.error(
+              `Unexpected response shape for "${username}": ${previewPayload(payload)}. Marking as unavailable.`
+            );
+          }
+          availability = normalized || 'unavailable';
         } catch (error) {
+          console.error(`Failed availability check for "${username}": ${error.message}`);
           availability = 'unavailable';
         }
       }

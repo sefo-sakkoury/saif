@@ -29,7 +29,8 @@
     "topgg-autoposter": "^2.0.1"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "usernames:check": "node util/discordUsernameAvailability.js"
   },
   "author": "RTX GAMING",
   "license": "XX",

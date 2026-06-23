@@ -15,6 +15,32 @@
 /play: plays music.
 ...
 
+## 🔎 4-Letter Username Availability Export
+
+Generate JSON records for 4-letter usernames (`a-z`) with availability labels:
+
+```bash
+npm run usernames:check
+```
+
+Notes:
+- Default mode is simulated unless `--endpoint` (or `DISCORD_CHECK_URL`) is provided.
+- Simulated mode prints a limitation notice to stderr.
+- Real-time mode limits checks to 1000 by default to reduce rate-limit risk.
+
+Examples:
+
+```bash
+# Simulated, first 100 entries
+node util/discordUsernameAvailability.js --limit=100 --simulate=true
+
+# Real-time endpoint (expects available:boolean or availability string in JSON)
+node util/discordUsernameAvailability.js --endpoint=https://example.com/check --limit=500 --delay-ms=80
+
+# Write output to file
+node util/discordUsernameAvailability.js --output=/tmp/usernames.json
+```
+
 ## 🤝 Contributing [Contact me on Discord]
 
 **Contributions to this project are welcome! If you'd like to contribute, follow these steps:**
